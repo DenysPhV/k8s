@@ -1,0 +1,10 @@
+# k8s/overlays/dev/patches/app-service-8080.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog-app-service
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
