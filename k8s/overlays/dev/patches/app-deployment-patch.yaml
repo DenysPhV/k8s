@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-app
+spec:
+  replicas: 1
+  template:
+    spec:
+      serviceAccountName: blog-app
+      containers:
+        - name: blog-app
+          resources:
+            requests:
+              cpu: "1"
+              memory: "128Mi"
+            limits:
+              cpu: "2"
+              memory: "256Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 101
+            readOnlyRootFilesystem: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+

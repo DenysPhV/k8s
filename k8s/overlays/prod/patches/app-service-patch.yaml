@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog-app-service
+spec:
+  type: ClusterIP

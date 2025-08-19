@@ -1,0 +1,31 @@
+# k8s/overlays/prod/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: blog-app-prod        
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+labels:
+  - includeSelectors: true
+    includeTemplates: true
+    pairs:
+      app.kubernetes.io/part-of: blog
+      env: prod
+
+patches:
+  - path: patches/app-deployment-patch.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: blog-app }
+  - path: patches/postgres-deployment-patch.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: postgres }
+  - path: patches/app-ingress-patch.yaml
+    target: { group: networking.k8s.io, version: v1, kind: Ingress, name: blog-app }
+  - target: { group: policy, version: v1, kind: PodDisruptionBudget, name: postgres-pdb }
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 1
+  - path: patches/app-service-patch.yaml
+    target: { group: "", version: v1, kind: Service, name: blog-app-service }

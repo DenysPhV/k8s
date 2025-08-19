@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-app
+spec:
+  replicas: 3
+  template:
+    spec:
+      serviceAccountName: blog-app
+      containers:
+        - name: blog-app
+          resources:
+            requests:
+              cpu: "2"
+              memory: "256Mi"
+            limits:
+              cpu: "2"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 10

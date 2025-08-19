@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: blog-config
+data:
+  DATABASE_HOST: postgres-service
+  DATABASE_NAME: blogdb
+  APP_ENV: production
