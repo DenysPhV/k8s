@@ -10,21 +10,13 @@ spec:
       containers:
         - name: blog-app
           resources:
-            requests:
-              cpu: "2"
-              memory: "256Mi"
-            limits:
-              cpu: "2"
-              memory: "512Mi"
+            requests: { cpu: "2", memory: "256Mi" }
+            limits: { cpu: "4",    memory: "512Mi" }
           readinessProbe:
-            httpGet:
-              path: /healthz
-              port: 80
+            httpGet: { path: /healthz, port: 80 }
             initialDelaySeconds: 5
             periodSeconds: 5
           livenessProbe:
-            httpGet:
-              path: /livez
-              port: 80
+            httpGet: { path: /livez, port: 80 }
             initialDelaySeconds: 15
             periodSeconds: 10

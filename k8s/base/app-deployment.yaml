@@ -2,84 +2,62 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: blog-app
-  labels:
-    app: blog-app
+  labels: { app: blog-app }
 spec:
   replicas: 2
   selector:
-    matchLabels:
-      app: blog-app
+    matchLabels: { app: blog-app }
   template:
     metadata:
-      labels:
-        app: blog-app
+      labels: { app: blog-app }
     spec:
-      serviceAccountName: blog-app-sa
-      containers:
-        - name: blog-app
-          image: nginx:alpine
-          ports:
-            - containerPort: 80
-          envFrom:
-            - configMapRef:
-                name: blog-config
-          env:
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: blog-secrets
-                  key: DATABASE_PASSWORD
-          resources:
-            requests:
-              memory: 64Mi
-              cpu: 100m
-            limits:
-              memory: 128Mi
-              cpu: 200m
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 101
-            allowPrivilegeEscalation: false
-          command:
-            - /bin/sh
-            - -c
-          args:
-            - 'echo "web blog" > /usr/share/nginx/html/index.html
-
-              echo "<br><b>Database connection test:</b><br>" >> /usr/share/nginx/html/index.html
-
-              PGPASSWORD=$POSTGRES_PASSWORD pg_isready -h postgres-service -U bloguser
-              -d blogdb >> /usr/share/nginx/html/index.html 2>&1
-
-              nginx -g ''daemon off;''
-
-              '
-          volumeMounts:
-            - name: pgclient
-              mountPath: /usr/bin/pg_isready
-              subPath: pg_isready
+      serviceAccountName: blog-app
       initContainers:
         - name: install-postgres-client
-          image: postgres:16
-          command:
-            - sh
-            - -c
-            - cp /usr/bin/pg_isready /mnt/bin/pg_isready
+          image: postgres:16.3
+          command: ["sh","-c"]
+          args:
+            - |
+              cp /usr/bin/psql /mnt/bin/psql
           volumeMounts:
             - name: pgclient
               mountPath: /mnt/bin
+      containers:
+        - name: blog-app
+          image: nginx:1.27-alpine
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "web blog" > /usr/share/nginx/html/index.html
+              echo "<br><b>Database connection test (psql):</b><br>" >> /usr/share/nginx/html/index.html
+              PGPASSWORD="$POSTGRES_PASSWORD" /opt/pgclient/bin/psql \
+                -h postgres-service -U bloguser -d blogdb -c 'select 1' \
+                >> /usr/share/nginx/html/index.html 2>&1 || true
+              nginx -g 'daemon off;'
+          ports: [{ containerPort: 80 }]
+          envFrom:
+            - configMapRef: { name: blog-config }
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: blog-secrets, key: DATABASE_PASSWORD } }
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits:   { cpu: "500m", memory: "256Mi" }
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: pgclient
+              mountPath: /opt/pgclient/bin
       volumes:
         - name: pgclient
           emptyDir: {}

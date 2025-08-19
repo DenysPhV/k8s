@@ -6,10 +6,6 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-production
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - blog.example.com
-      secretName: blog-prod-tls
   rules:
     - host: blog.example.com
       http:
@@ -21,3 +17,6 @@ spec:
                 name: blog-app-service
                 port:
                   number: 80
+  tls:
+    - hosts: [ blog.example.com ]
+      secretName: blog-prod-tls

@@ -6,10 +6,6 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-staging
 spec:
   ingressClassName: nginx
-  tls:
-    - hosts:
-        - blog-dev.example.com
-      secretName: blog-dev-tls
   rules:
     - host: blog-dev.example.com
       http:
@@ -21,3 +17,6 @@ spec:
                 name: blog-app-service
                 port:
                   number: 80
+  tls:
+    - hosts: [ blog-dev.example.com ]
+      secretName: blog-dev-tls

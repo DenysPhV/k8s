@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-app
+spec:
+  template:
+    spec:
+      securityContext:
+        fsGroup: 101
+      initContainers:
+        - name: init-html
+          image: alpine:3.19
+          command: [sh, -c]
+          args:
+            - |
+              mkdir -p /mnt/html
+              echo "web blog" > /mnt/html/index.html
+        - name: db-check
+          image: postgres:16.3
+          command: [sh, -c]
+          args:
+            - |
+              echo "<br><b>Database connection test (psql):</b><br>" >> /mnt/html/index.html
+              PGPASSWORD="$DATABASE_PASSWORD" psql \
+                -h "$DATABASE_HOST" -U "$DATABASE_USER" -d "$DATABASE_NAME" \
+                -c 'select 1' >> /mnt/html/index.html 2>&1 || true
+          envFrom:
+            - configMapRef: { name: blog-config }
+            - secretRef:    { name: blog-secrets }
+          volumeMounts:
+            - name: html
+              mountPath: /mnt/html
+      containers:
+        - name: blog-app
+          command: ["nginx"]
+          args: ["-g","daemon off;"]
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html   
+            - name: nginx-cache
+              mountPath: /var/cache/nginx           
+            - name: nginx-run
+              mountPath: /var/run/nginx
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+      volumes:
+        - name: html
+          emptyDir: {}
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+

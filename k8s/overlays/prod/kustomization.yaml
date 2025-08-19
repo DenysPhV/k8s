@@ -11,9 +11,7 @@ resources:
 labels:
   - includeSelectors: true
     includeTemplates: true
-    pairs:
-      app.kubernetes.io/part-of: blog
-      env: prod
+    pairs: { app.kubernetes.io/part-of: blog, env: prod }
 
 patches:
   - path: patches/app-deployment-patch.yaml

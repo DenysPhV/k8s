@@ -8,12 +8,19 @@ resources:
 
 labels:
   - includeSelectors: true
-    pairs:
-      app.kubernetes.io/part-of: blog
-      app.kubernetes.io/managed-by: kustomize
-      env: dev
+    includeTemplates: true
+    pairs: { app.kubernetes.io/part-of: blog, env: dev }
 
-patchesStrategicMerge:
-  - patches/app-deployment-patch.yaml
-  - patches/postgres-deployment-patch.yaml
-  - patches/app-ingress-patch.yaml
+patches:
+  - path: patches/app-deployment-patch.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: blog-app }
+  - path: patches/postgres-deployment-patch.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: postgres }
+  - path: patches/app-ingress-patch.yaml
+    target: { group: networking.k8s.io, version: v1, kind: Ingress, name: blog-app }
+  - path: patches/fix-blog-app-runtime.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: blog-app }
+  - path: patches/fix-postgres-perms.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: postgres }
+  - path: patches/app-deployment-rolling-patch.yaml
+    target: { group: apps, version: v1, kind: Deployment, name: blog-app }
